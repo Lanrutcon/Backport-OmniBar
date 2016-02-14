@@ -1,171 +1,208 @@
+--------------
+-- Implementing missing functions for Cataclysm
+-- CHANGES: Lanrutcon
+--------------
+
+local classTable = { "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "DEATHKNIGHT", "SHAMAN", "MAGE", "WARLOCK", "DRUID" };
+local specTable = {
+	{"ARMS", "FURY", "PROTECTION"},
+	{"HOLY", "PROTECTION", "RETRIBUTION"},
+	{"BEAST MASTERY", "MARKSMANSHIP", "SURVIVAL"},
+	{"ASSASSINATION", "COMBAT", "SUBTLETY"},
+	{"DISCIPLINE", "HOLY", "SHADOW"},
+	{"BLOOD", "FROST", "UNHOLY"},
+	{"ELEMENTAL", "ENHANCEMENT", "RESTORATION"},
+	{"ARCANE", "FIRE", "FROST"},
+	{"AFFLICTION", "DEMONOLOGY", "DESTRUCTION"},
+	{"BALANCE", "FERAL COMBAT", "RESTORATION"}
+}
+
+local function GetClassInfoByID(classID)
+	return classID, classTable[classID];
+end
+
+local function GetNumSpecializationsForClassID(classID)
+	return #specTable[classID];
+end
+
+local function GetSpecializationInfoForClassID(classID, i)
+	return (classID-1)*3+i, specTable[classID][i];
+end
+
+local function GetCooldownTimes(cooldownFrame)
+	return cooldownFrame.startTime, cooldownFrame.duration;
+end
+
+function orderByTimeLeft()
+	table.sort(_G["OmniBar"].active, function(x, y)
+		if x.cooldown.finish > y.cooldown.finish then
+			return false;
+		else --if x.cooldown.finish < y.cooldown.finish then
+			return true;
+		end
+	end)
+end
+
+----------------------
+-- END OF CHANGES
+----------------------
+
 
 -- OmniBar by Jordon
 
 local addonName, L = ...
 
 local cooldowns = {
+	--DEATH KNIGHT
 	[47476]  = { default = true,  duration = 60,  class = "DEATHKNIGHT" },                                   -- Strangulate
-	[47481]  = { default = false, duration = 60,  class = "DEATHKNIGHT", specID = { 252 } },                 -- Gnaw (Ghoul)
-	[47482]  = { default = false, duration = 30,  class = "DEATHKNIGHT", specID = { 252 } },                 -- Leap (Ghoul)
+	[47481]  = { default = true, duration = 60,  class = "DEATHKNIGHT", specID = { 18 } },                 -- Gnaw (Ghoul)
+	[47482]  = { default = true, duration = 30,  class = "DEATHKNIGHT", specID = { 18 } },                 -- Leap (Ghoul)
 	[47528]  = { default = true,  duration = 15,  class = "DEATHKNIGHT" },                                   -- Mind Freeze
-	[48707]  = { default = false, duration = 45,  class = "DEATHKNIGHT" },                                   -- Anti-Magic Shell
-	[48743]  = { default = false, duration = 120, class = "DEATHKNIGHT" },                                   -- Death Pact
-	[48792]  = { default = false, duration = 180, class = "DEATHKNIGHT" },                                   -- Icebound Fortitude
-	[49028]  = { default = false, duration = 90,  class = "DEATHKNIGHT", specID = { 250 } },                 -- Dancing Rune Weapon
-	[49039]  = { default = false, duration = 120, class = "DEATHKNIGHT" },                                   -- Lichborne
-	[49576]  = { default = false, duration = 25,  class = "DEATHKNIGHT" },                                   -- Death Grip
-	[51052]  = { default = false, duration = 120, class = "DEATHKNIGHT" },                                   -- Anti-Magic Zone
-	[51271]  = { default = false, duration = 60,  class = "DEATHKNIGHT", specID = { 251 } },                 -- Pillar of Frost
-	[55233]  = { default = false, duration = 60,  class = "DEATHKNIGHT", specID = { 250 } },                 -- Vampiric Blood
-	[77606]  = { default = false, duration = 30,  class = "DEATHKNIGHT" },                                   -- Dark Simulacrum
+	[48707]  = { default = true, duration = 45,  class = "DEATHKNIGHT" },                                   -- Anti-Magic Shell
+	[48743]  = { default = true, duration = 120, class = "DEATHKNIGHT" },                                   -- Death Pact
+	[48792]  = { default = true, duration = 180, class = "DEATHKNIGHT" },                                   -- Icebound Fortitude
+	[49028]  = { default = true, duration = 90,  class = "DEATHKNIGHT", specID = { 16 } },                 -- Dancing Rune Weapon
+	[49039]  = { default = true, duration = 120, class = "DEATHKNIGHT" },                                   -- Lichborne
+	[49576]  = { default = true, duration = 25,  class = "DEATHKNIGHT" },                                   -- Death Grip
+	[51052]  = { default = true, duration = 120, class = "DEATHKNIGHT" },                                   -- Anti-Magic Zone
+	[51271]  = { default = true, duration = 60,  class = "DEATHKNIGHT", specID = { 17 } },                 -- Pillar of Frost
+	[55233]  = { default = true, duration = 60,  class = "DEATHKNIGHT", specID = { 16 } },                 -- Vampiric Blood
+	[77606]  = { default = true, duration = 30,  class = "DEATHKNIGHT" },                                   -- Dark Simulacrum
 	[91802]  = { default = true,  duration = 30,  class = "DEATHKNIGHT", specID = { 252 } },                 -- Shambling Rush
-	[96268]  = { default = false, duration = 30,  class = "DEATHKNIGHT" },                                   -- Death's Advance
-	[108194] = { default = false, duration = 30,  class = "DEATHKNIGHT" },                                   -- Asphyxiate
-	[108201] = { default = false, duration = 120, class = "DEATHKNIGHT" },                                   -- Desecrated Ground
-	[152279] = { default = false, duration = 120, class = "DEATHKNIGHT" },                                   -- Breath of Sindragosa
-	[498]    = { default = false, duration = 30,  class = "PALADIN" },                                       -- Divine Protection
-	[642]    = { default = false, duration = 150, class = "PALADIN" },                                       -- Divine Shield
-	[853]    = { default = false, duration = 60,  class = "PALADIN" },                                       -- Hammer of Justice
-	    [105593] = { parent = 853, duration = 30 },                                                          -- Fist of Justice
-	[1022]   = { default = false, duration = 300, class = "PALADIN", charges = 2 },                          -- Hand of Protection
-	[1044]   = { default = false, duration = 25,  class = "PALADIN", charges = 2 },                          -- Hand of Freedom
-	[6940]   = { default = false, duration = { default = 90, [65] = 110 }, class = "PALADIN", charges = 2 }, -- Hand of Sacrifice
-	[20066]  = { default = false, duration = 15,  class = "PALADIN" },                                       -- Repentance
-	[31821]  = { default = false, duration = 180, class = "PALADIN", specID = { 65 } },                      -- Devotion Aura
-	[31884]  = { default = false, duration = 120, class = "PALADIN" },                                       -- Avenging Wrath
+	[96268]  = { default = true, duration = 30,  class = "DEATHKNIGHT" },                                   -- Death's Advance
+	
+	
+	--PALADIN
+	[498]    = { default = true, duration = 30,  class = "PALADIN" },                                       -- Divine Protection
+	[642]    = { default = true, duration = 150, class = "PALADIN" },                                       -- Divine Shield
+	[853]    = { default = true, duration = 60,  class = "PALADIN" },                                       -- Hammer of Justice
+	[1022]   = { default = true, duration = 300, class = "PALADIN", charges = 2 },                          -- Hand of Protection
+	[1044]   = { default = true, duration = 25,  class = "PALADIN", charges = 2 },                          -- Hand of Freedom
+	[6940]   = { default = true, duration = { default = 90, [65] = 110 }, class = "PALADIN", charges = 2 }, -- Hand of Sacrifice
+	[20066]  = { default = true, duration = 15,  class = "PALADIN" },                                       -- Repentance
+	[31821]  = { default = true, duration = 180, class = "PALADIN", specID = { 65 } },                      -- Devotion Aura
+	[31884]  = { default = true, duration = 120, class = "PALADIN" },                                       -- Avenging Wrath
 	[96231]  = { default = true,  duration = 15,  class = "PALADIN" },                                       -- Rebuke
-	[114039] = { default = false, duration = 30,  class = "PALADIN" },                                       -- Hand of Purity
-	[114157] = { default = false, duration = 60,  class = "PALADIN" },                                       -- Execution Sentence
-	[115750] = { default = false, duration = 120, class = "PALADIN" },                                       -- Blinding Light
-	[871]    = { default = false, duration = 180, class = "WARRIOR", specID = { 73 } },                      -- Shield Wall
-	[1719]   = { default = false, duration = 180, class = "WARRIOR", specID = { 71, 72 } },                  -- Recklessness
-	[3411]   = { default = false, duration = 30,  class = "WARRIOR" },                                       -- Intervene
-	[5246]   = { default = false, duration = 90,  class = "WARRIOR" },                                       -- Intimidating Shout
-	[6544]   = { default = false, duration = 45,  class = "WARRIOR" },                                       -- Heroic Leap
+	
+	
+	--WARRIOR
+	[100]    = { default = true, duration = 12, class = "WARRIOR", specID = { 1, 3 } },                      -- Charge
+	[871]    = { default = true, duration = 180, class = "WARRIOR", specID = { 3 } },                      -- Shield Wall
+	[1719]   = { default = true, duration = 180, class = "WARRIOR", specID = { 1, 2 } },                  -- Recklessness
+	[3411]   = { default = true, duration = 30,  class = "WARRIOR" },                                       -- Intervene
+	[5246]   = { default = true, duration = 90,  class = "WARRIOR" },                                       -- Intimidating Shout
+	[6544]   = { default = true, duration = 45,  class = "WARRIOR" },                                       -- Heroic Leap
 	[6552]   = { default = true,  duration = 15,  class = "WARRIOR" },                                       -- Pummel
-	[18499]  = { default = false, duration = 30,  class = "WARRIOR" },                                       -- Berserker Rage
-	[23920]  = { default = false, duration = 25,  class = "WARRIOR" },                                       -- Spell Reflection
-		[114028] = { parent = 23920, duration = 30 },                                                        -- Mass Spell Reflection
-	[46968]  = { default = false, duration = 20,  class = "WARRIOR" },                                       -- Shockwave
-	[107570] = { default = false, duration = 30,  class = "WARRIOR" },                                       -- Storm Bolt
-	[107574] = { default = false, duration = 90,  class = "WARRIOR" },                                       -- Avatar
-	[114029] = { default = false, duration = 30,  class = "WARRIOR" },                                       -- Safeguard
-	[118000] = { default = false, duration = 60,  class = "WARRIOR" },                                       -- Dragon Roar
-	[118038] = { default = false, duration = 120, class = "WARRIOR", specID = { 71, 72 } },                  -- Die by the Sword
-	[99]     = { default = false, duration = 30,  class = "DRUID" },                                         -- Disorienting Roar
-	[5211]   = { default = false, duration = 50,  class = "DRUID" },                                         -- Bash
-	[22812]  = { default = false, duration = 60,  class = "DRUID", specID = { 102, 104, 105 } },             -- Barkskin
-	[33891]  = { default = false, duration = 180, class = "DRUID", specID = { 105 } },                       -- Incarnation: Tree of Life
-	[50334]  = { default = false, duration = 180, class = "DRUID", specID = { 103, 104 } },                  -- Berserk
-	[61336]  = { default = false, duration = 180, class = "DRUID", specID = { 103, 104 }, charges = 2 },     -- Survival Instincts
-	[78675]  = { default = true,  duration = 60,  class = "DRUID", specID = { 102 } },                       -- Solar Beam
-	[102280] = { default = false, duration = 30,  class = "DRUID" },                                         -- Displacer Beast
-	[102342] = { default = false, duration = 60,  class = "DRUID", specID = { 105 } },                       -- Ironbark
-	[102359] = { default = false, duration = 30,  class = "DRUID" },                                         -- Mass Entanglement
-	[102543] = { default = false, duration = 180, class = "DRUID", specID = { 103 } },                       -- Incarnation: King of the Jungle
-	[102560] = { default = false, duration = 180, class = "DRUID", specID = { 102 } },                       -- Incarnation: Chosen of Elune
-	[106839] = { default = true,  duration = 15,  class = "DRUID", specID = { 103, 104 } },                  -- Skull Bash
-	[108291] = { default = false, duration = 360, class = "DRUID" },                                         -- Heart of the Wild (Balance)
+	[18499]  = { default = true, duration = 30,  class = "WARRIOR" },                                       -- Berserker Rage
+	[23920]  = { default = true, duration = 25,  class = "WARRIOR" },                                       -- Spell Reflection
+	[46968]  = { default = true, duration = 20,  class = "WARRIOR" },                                       -- Shockwave
+	
+	
+	--DRUID
+	[99]     = { default = true, duration = 30,  class = "DRUID" },                                         -- Disorienting Roar
+	[5211]   = { default = true, duration = 50,  class = "DRUID" },                                         -- Bash
+	[22812]  = { default = true, duration = 60,  class = "DRUID", specID = { 28, 29, 30 } },             -- Barkskin
+	[33891]  = { default = true, duration = 180, class = "DRUID", specID = { 30 } },                       -- Incarnation: Tree of Life
+	[50334]  = { default = true, duration = 180, class = "DRUID", specID = { 29, 29 } },                  -- Berserk
+	[61336]  = { default = true, duration = 180, class = "DRUID", specID = { 29, 29 }, charges = 2 },     -- Survival Instincts
+	[78675]  = { default = true,  duration = 60,  class = "DRUID", specID = { 28 } },                       -- Solar Beam
+	[80965]	 = { default = true,  duration = 10,  class = "DRUID", specID = { 29, 29 } },                  -- Skull Bash
+	[29166]  = { default = true,  duration = 180,  class = "DRUID" },											--Innervate
+--[[
+	[102280] = { default = true, duration = 30,  class = "DRUID" },                                         -- Displacer Beast
+	[102342] = { default = true, duration = 60,  class = "DRUID", specID = { 105 } },                       -- Ironbark
+	[102359] = { default = true, duration = 30,  class = "DRUID" },                                         -- Mass Entanglement
+	[102543] = { default = true, duration = 180, class = "DRUID", specID = { 103 } },                       -- Incarnation: King of the Jungle
+	[102560] = { default = true, duration = 180, class = "DRUID", specID = { 102 } },                       -- Incarnation: Chosen of Elune
+	[108291] = { default = true, duration = 360, class = "DRUID" },                                         -- Heart of the Wild (Balance)
 		[108292] = { parent = 108291 },                                                                      -- Heart of the Wild (Feral)
 		[108293] = { parent = 108291 },                                                                      -- Heart of the Wild (Guardian)
 		[108294] = { parent = 108291 },                                                                      -- Heart of the Wild (Resto)
-	[112071] = { default = false, duration = 180, class = "DRUID", specID = { 102 } },                       -- Celestial Alignment
-	[124974] = { default = false, duration = 90,  class = "DRUID" },                                         -- Nature's Vigil
-	[132158] = { default = false, duration = 60,  class = "DRUID", specID = { 105 } },                       -- Nature's Swiftness
-	[132469] = { default = false, duration = 30,  class = "DRUID" },                                         -- Typhoon
-	[159630] = { default = false, duration = 90,  class = "PRIEST", specID = { 256, 257 } },                 -- Shadow Magic
-	[8122]   = { default = false, duration = 30,  class = "PRIEST" },                                        -- Psychic Scream
-	[15487]  = { default = true,  duration = 45,  class = "PRIEST", specID = { 256, 258 } },                 -- Silence
-	[33206]  = { default = false, duration = 120, class = "PRIEST", specID = { 256 } },                      -- Pain Suppression
-	[47585]  = { default = false, duration = 120, class = "PRIEST", specID = { 258 } },                      -- Dispersion
-	[47788]  = { default = false, duration = 180, class = "PRIEST", specID = { 257 } },                      -- Guardian Spirit
-	[64044]  = { default = false, duration = 45,  class = "PRIEST", specID = { 258 } },                      -- Psychic Horror
-	[73325]  = { default = false, duration = 90,  class = "PRIEST" },                                        -- Leap of Faith
-	[5484]   = { default = false, duration = 40,  class = "WARLOCK" },                                       -- Howl of Terror
-	[6360]   = { default = false, duration = 25,  class = "WARLOCK" },                                       -- Whiplash
-	[6789]   = { default = false, duration = 45,  class = "WARLOCK" },                                       -- Mortal Coil
-	[19505]  = { default = false, duration = 15,  class = "WARLOCK" },                                       -- Devour Magic (Felhunter)
-	[30283]  = { default = false, duration = 30,  class = "WARLOCK" },                                       -- Shadowfury
-	[48020]  = { default = false, duration = 26,  class = "WARLOCK" },                                       -- Demonic Portal
-	[89766]  = { default = false, duration = 30,  class = "WARLOCK" },                                       -- Axe Toss
-	[108482] = { default = false, duration = 120, class = "WARLOCK" },                                       -- Unbound Will
-	[119910] = { default = true,  duration = 24,  class = "WARLOCK" },                                       -- Spell Lock (Command Demon)
-	    [19647]  = { parent = 119910 },                                                                      -- Spell Lock (Felhunter)
-	    [119911] = { parent = 119910 },                                                                      -- Optical Blast (Command Demon)
-	    [115781] = { parent = 119910 },                                                                      -- Optical Blast (Observer)
-	    [132409] = { parent = 119910 },                                                                      -- Spell Lock (Grimoire of Sacrifice)
-	    [171138] = { parent = 119910 },                                                                      -- Shadow Lock (Doomguard)
-	    [171139] = { parent = 119910 },                                                                      -- Shadow Lock (Grimoire of Sacrifice)
-	    [171140] = { parent = 119910 },                                                                      -- Shadow Lock (Command Demon)
-	[111859] = { default = false, duration = 120, class = "WARLOCK" },                                       -- Grimoire: Imp
-	[111896] = { default = false, duration = 120, class = "WARLOCK" },                                       -- Grimoire: Succubus
+	[112071] = { default = true, duration = 180, class = "DRUID", specID = { 28 } },                       -- Celestial Alignment
+	[124974] = { default = true, duration = 90,  class = "DRUID" },                                         -- Nature's Vigil
+	[132158] = { default = true, duration = 60,  class = "DRUID", specID = { 28 } },                       -- Nature's Swiftness
+	[132469] = { default = true, duration = 30,  class = "DRUID" },                                         -- Typhoon
+]]--	
+	
+	--PRIEST
+	[8122]   = { default = true, duration = 30,  class = "PRIEST" },                                        -- Psychic Scream
+	[15487]  = { default = true,  duration = 45, class = "PRIEST", specID = { 15 } },                 -- Silence
+	[33206]  = { default = true, duration = 120, class = "PRIEST", specID = { 13 } },                      -- Pain Suppression
+	[47585]  = { default = true, duration = 120, class = "PRIEST", specID = { 15 } },                      -- Dispersion
+	[47788]  = { default = true, duration = 180, class = "PRIEST", specID = { 14 } },                      -- Guardian Spirit
+	[64044]  = { default = true, duration = 45,  class = "PRIEST", specID = { 15 } },                      -- Psychic Horror
+	[73325]  = { default = true, duration = 90,  class = "PRIEST" },                                        -- Leap of Faith
+	
+	
+	--WARLOCK
+	[5484]   = { default = true, duration = 40,  class = "WARLOCK" },                                       -- Howl of Terror
+	[6360]   = { default = true, duration = 25,  class = "WARLOCK" },                                       -- Whiplash
+	[6789]   = { default = true, duration = 45,  class = "WARLOCK" },                                       -- Mortal Coil
+	[19505]  = { default = true, duration = 15,  class = "WARLOCK" },                                       -- Devour Magic (Felhunter)
+	[30283]  = { default = true, duration = 30,  class = "WARLOCK" },                                       -- Shadowfury
+	[48020]  = { default = true, duration = 26,  class = "WARLOCK" },                                       -- Demonic Portal
+	[89766]  = { default = true, duration = 30,  class = "WARLOCK" },                                       -- Axe Toss
+	[19647]  = { default = true,  duration = 24,  class = "WARLOCK" },                                       -- Spell Lock
+	[111859] = { default = true, duration = 120, class = "WARLOCK" },                                       -- Grimoire: Imp
+	[111896] = { default = true, duration = 120, class = "WARLOCK" },                                       -- Grimoire: Succubus
 	[111897] = { default = true,  duration = 120, class = "WARLOCK" },                                       -- Grimoire: Felhunter
-	[77801]  = { default = false, duration = 120, class = "WARLOCK", charges = 2 },                          -- Dark Soul
+	[77801]  = { default = true, duration = 120, class = "WARLOCK", charges = 2 },                          -- Dark Soul
 		[113858] = { parent = 77801 },                                                                       -- Dark Soul: Instability
 		[113860] = { parent = 77801 },                                                                       -- Dark Soul: Misery
 		[113861] = { parent = 77801 },                                                                       -- Dark Soul: Knowledge
-	[115284] = { default = false, duration = 15,  class = "WARLOCK" },                                       -- Clone Magic (Observer)
-	[115770] = { default = false, duration = 25,  class = "WARLOCK" },                                       -- Fellash
-	[8143]   = { default = false, duration = 60,  class = "SHAMAN" },                                        -- Tremor Totem
-	[8177]   = { default = false, duration = 25,  class = "SHAMAN" },                                        -- Grounding Totem
-	[30823]  = { default = false, duration = 60,  class = "SHAMAN", specID = { 262, 263 } },                 -- Shamanistic Rage
-	[51490]  = { default = false, duration = 45,  class = "SHAMAN", specID = { 262, 263 } },                 -- Thunderstorm
-	[51514]  = { default = false, duration = 45,  class = "SHAMAN" },                                        -- Hex
-	[57994]  = { default = true,  duration = 12,  class = "SHAMAN" },                                        -- Wind Shear
-	[98008]  = { default = false, duration = 180, class = "SHAMAN" },                                        -- Spirit Link Totem
-	[108269] = { default = false, duration = 45,  class = "SHAMAN" },                                        -- Capacitor Totem
-	[108271] = { default = false, duration = 90,  class = "SHAMAN" },                                        -- Astral Shift
-	[108273] = { default = false, duration = 60,  class = "SHAMAN" },                                        -- Windwalk Totem
-	[108285] = { default = false, duration = 180, class = "SHAMAN" },                                        -- Call of the Elements
-	[1499]   = { default = false, duration = { default = 20, [253] = 30, [254] = 30 }, class = "HUNTER" },   -- Freezing Trap
+	
+	
+	--SHAMAN
+	[8143]   = { default = true, duration = 60,  class = "SHAMAN" },                                        -- Tremor Totem
+	[8177]   = { default = true, duration = 25,  class = "SHAMAN" },                                        -- Grounding Totem
+	[30823]  = { default = true, duration = 60,  class = "SHAMAN", specID = { 20 } },                 -- Shamanistic Rage
+	[51490]  = { default = true, duration = 45,  class = "SHAMAN", specID = { 19 } },                 -- Thunderstorm
+	[51514]  = { default = true, duration = 45,  class = "SHAMAN" },                                        -- Hex
+	[57994]  = { default = true,  duration = 6,  class = "SHAMAN" },                                        -- Wind Shear
+	[98008]  = { default = true, duration = 180, class = "SHAMAN" },                                        -- Spirit Link Totem
+	
+	
+	--HUNTER
+	[1499]   = { default = true, duration = { default = 20, [7] = 30, [8] = 30 }, class = "HUNTER" },   -- Freezing Trap
 	    [60192] = { parent = 1499 },                                                                         -- Freezing Trap (Trap Launcher)
-	[13813]  = { default = false, duration = { default = 20, [253] = 30, [254] = 30 }, class = "HUNTER" },   -- Explosive Trap
+	[13813]  = { default = true, duration = { default = 20, [7] = 30, [8] = 30 }, class = "HUNTER" },   -- Explosive Trap
 	    [82939] = { parent = 13813 },                                                                        -- Explosive Trap (Trap Launcher)
-	[19263]  = { default = false, duration = 180, class = "HUNTER", charges = 2 },                           -- Deterrence
-	[19386]  = { default = false, duration = 45,  class = "HUNTER" },                                        -- Wyvern Sting
-	[19574]  = { default = false, duration = 60,  class = "HUNTER", specID = { 253 } },                      -- Bestial Wrath
-	[53480]  = { default = false, duration = 60,  class = "HUNTER" },                                        -- Roar of Sacrifice
-	[131894] = { default = false, duration = 60,  class = "HUNTER" },                                        -- A Murder of Crows
-	[147362] = { default = true,  duration = 24,  class = "HUNTER" },                                        -- Counter Shot
-	[66]     = { default = false, duration = 300, class = "MAGE" },                                          -- Invisibility
-	[1953]   = { default = false, duration = 15,  class = "MAGE" },                                          -- Blink
+	[19263]  = { default = true, duration = 180, class = "HUNTER", charges = 2 },                           -- Deterrence
+	[19386]  = { default = true, duration = 45,  class = "HUNTER" },                                        -- Wyvern Sting
+	[19574]  = { default = true, duration = 60,  class = "HUNTER", specID = { 7 } },                      -- Bestial Wrath
+	[53480]  = { default = true, duration = 60,  class = "HUNTER" },                                        -- Roar of Sacrifice
+	
+	
+	--MAGE
+	[66]     = { default = true, duration = 300, class = "MAGE" },                                          -- Invisibility
+	[1953]   = { default = true, duration = 15,  class = "MAGE" },                                          -- Blink
 	[2139]   = { default = true,  duration = 24,  class = "MAGE" },                                          -- Counterspell
-	[11129]  = { default = false, duration = 45,  class = "MAGE", specID = { 63 } },                         -- Combustion
-	[11958]  = { default = false, duration = 180, class = "MAGE" },                                          -- Cold Snap
-	[12043]  = { default = false, duration = 90,  class = "MAGE", specID = { 62 } },                         -- Presence of Mind
-	[12472]  = { default = false, duration = 180, class = "MAGE", specID = { 64 } },                         -- Icy Veins
-	[31661]  = { default = false, duration = 20,  class = "MAGE", specID = { 63 } },                         -- Dragon's Breath
-	[44572]  = { default = false, duration = 30,  class = "MAGE", specID = { 64 } },                         -- Deep Freeze
-	[45438]  = { default = false, duration = 300, class = "MAGE" },                                          -- Ice Block
-	[84714]  = { default = false, duration = 60,  class = "MAGE", specID = { 64 } },                         -- Frozen Orb
-	[102051] = { default = false, duration = 20,  class = "MAGE" },                                          -- Frostjaw
-	[113724] = { default = false, duration = 45,  class = "MAGE" },                                          -- Ring of Frost
-	[157997] = { default = false, duration = 25,  class = "MAGE", specID = { 64 }, charges = 2 },            -- Ice Nova
-	[408]    = { default = false, duration = 20,  class = "ROGUE" },                                         -- Kidney Shot
+	[11129]  = { default = true, duration = 45,  class = "MAGE", specID = { 23 } },                         -- Combustion
+	[11958]  = { default = true, duration = 180, class = "MAGE" },                                          -- Cold Snap
+	[12043]  = { default = true, duration = 90,  class = "MAGE", specID = { 22 } },                         -- Presence of Mind
+	[12472]  = { default = true, duration = 180, class = "MAGE", specID = { 24 } },                         -- Icy Veins
+	[31661]  = { default = true, duration = 20,  class = "MAGE", specID = { 23 } },                         -- Dragon's Breath
+	[44572]  = { default = true, duration = 30,  class = "MAGE", specID = { 24 } },                         -- Deep Freeze
+	[45438]  = { default = true, duration = 300, class = "MAGE" },                                          -- Ice Block
+	[84714]  = { default = true, duration = 60,  class = "MAGE", specID = { 24 } },                         -- Frozen Orb
+	[82676]  = { default = true, duration = 45,  class = "MAGE" },                                          -- Ring of Frost
+	
+	
+	--ROGUE
+	[408]    = { default = true, duration = 20,  class = "ROGUE" },                                         -- Kidney Shot
 	[1766]   = { default = true,  duration = 15,  class = "ROGUE" },                                         -- Kick
-	[1856]   = { default = false, duration = { default = 60, [261] = 120 }, class = "ROGUE" },               -- Vanish
-	[2094]   = { default = false, duration = 120, class = "ROGUE" },                                         -- Blind
-	[2983]   = { default = false, duration = 60,  class = "ROGUE" },                                         -- Sprint
-	[5277]   = { default = false, duration = 180, class = "ROGUE" },                                         -- Evasion
-	[13750]  = { default = false, duration = 180, class = "ROGUE", specID = { 260 } },                       -- Adrenaline Rush
-	[14185]  = { default = false, duration = 300, class = "ROGUE" },                                         -- Preparation
-	[31224]  = { default = false, duration = 60,  class = "ROGUE" },                                         -- Cloak of Shadows
-	[36554]  = { default = false, duration = 20,  class = "ROGUE" },                                         -- Shadow Step
-	[51690]  = { default = false, duration = 120, class = "ROGUE", specID = { 260} },                        -- Killing Spree
-	[51713]  = { default = false, duration = 60,  class = "ROGUE", specID = { 261 } },                       -- Shadow Dance
-	[74001]  = { default = false, duration = 120, class = "ROGUE" },                                         -- Combat Readiness
-	[76577]  = { default = false, duration = 180, class = "ROGUE" },                                         -- Smoke Bomb
-	[115176] = { default = false, duration = 180, class = "MONK", specID = { 268, 269 } },                   -- Zen Meditation
-	[115203] = { default = false, duration = 180, class = "MONK" },                                          -- Fortifying Brew
-	[115310] = { default = false, duration = 180, class = "MONK" },                                          -- Revival
-	[116705] = { default = true,  duration = 15,  class = "MONK" },                                          -- Spear Hand Strike
-	[116844] = { default = false, duration = 45,  class = "MONK" },                                          -- Ring of Peace
-	[116849] = { default = false, duration = 55,  class = "MONK", specID = { 270 } },                        -- Life Cocoon
-	[119381] = { default = false, duration = 45,  class = "MONK" },                                          -- Leg Sweep
-	[119996] = { default = false, duration = 25,  class = "MONK" },                                          -- Transcendence: Transfer
-	[122470] = { default = false, duration = 90,  class = "MONK", specID = { 269 } },                        -- Touch of Karma
-	[122783] = { default = false, duration = 90,  class = "MONK" },                                          -- Diffuse Magic
-	[137562] = { default = false, duration = 120, class = "MONK" },                                          -- Nimble Brew
+	[1856]   = { default = true, duration = { default = 60, [12] = 120 }, class = "ROGUE" },               -- Vanish
+	[2094]   = { default = true, duration = 120, class = "ROGUE" },                                         -- Blind
+	[2983]   = { default = true, duration = 60,  class = "ROGUE" },                                         -- Sprint
+	[5277]   = { default = true, duration = 180, class = "ROGUE" },                                         -- Evasion
+	[13750]  = { default = true, duration = 180, class = "ROGUE", specID = { 11 } },                       -- Adrenaline Rush
+	[14185]  = { default = true, duration = 300, class = "ROGUE" },                                         -- Preparation
+	[31224]  = { default = true, duration = 60,  class = "ROGUE" },                                         -- Cloak of Shadows
+	[36554]  = { default = true, duration = 20,  class = "ROGUE" },                                         -- Shadow Step
+	[51690]  = { default = true, duration = 120, class = "ROGUE", specID = { 11} },                        -- Killing Spree
+	[51713]  = { default = true, duration = 60,  class = "ROGUE", specID = { 12 } },                       -- Shadow Dance
+	[74001]  = { default = true, duration = 120, class = "ROGUE" },                                         -- Combat Readiness
+	[76577]  = { default = true, duration = 180, class = "ROGUE" },                                         -- Smoke Bomb
 }
 
 local order = {
@@ -179,14 +216,13 @@ local order = {
 	["HUNTER"] = 8,
 	["MAGE"] = 9,
 	["ROGUE"] = 10,
-	["MONK"] = 11,
 }
 
 local resets = {
 	--[[ Summon Felhunter
 	     - Spell Lock
 	  ]]
-	[691] = { 119910 },
+	[691] = { 19647 },
 
 	--[[ Cold Snap
 	     - Ice Block
@@ -202,13 +238,6 @@ local resets = {
 	  ]]
 	[14185] = { 2983, 1856, 5277 },
 
-	--[[ Call of the Elements
-	     - Tremor Totem
-	     - Grounding Totem
-	     - Capacitor Totem
-	     - Windwalk Totem
-	  ]]
-	[108285] = { 8143, 8177, 108269, 108273 },
 }
 
 -- Defaults
@@ -372,8 +401,8 @@ function OmniBar_UpdateBorders(self)
 		end
 
 		-- Set dim
-		self.active[i]:SetAlpha(self.settings.unusedAlpha and self.active[i].cooldown:GetCooldownTimes() == 0 and not border and
-			self.settings.unusedAlpha or 1)
+		--self.active[i]:SetAlpha(self.settings.unusedAlpha and self.active[i].cooldown:GetCooldownTimes() == 0 and not border and
+		--	self.settings.unusedAlpha or 1)
 	end
 end
 
@@ -430,7 +459,6 @@ function OmniBar_OnEvent(self, event, ...)
 		self:RegisterEvent("PLAYER_FOCUS_CHANGED")
 		self:RegisterEvent("PLAYER_REGEN_DISABLED")
 		self:RegisterEvent("ARENA_OPPONENT_UPDATE")
-		self:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
 		self:RegisterEvent("UPDATE_BATTLEFIELD_SCORE")
 
 		-- Add Options Panel category
@@ -509,19 +537,20 @@ function OmniBar_OnEvent(self, event, ...)
 			end
 		end
 
-	elseif event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS" or event == "ARENA_OPPONENT_UPDATE" then
-		for i = 1, 5 do
-			local specID = GetArenaOpponentSpec(i)
-			if specID and specID > 0 then
-				-- only add icons if show unused is checked
-				if not self.settings.showUnused then return end
-				if not self.detected[i] then
-					local class = select(7, GetSpecializationInfoByID(specID))
-					OmniBar_AddIconsByClass(self, class, i, specID)
-					self.detected[i] = class
-				end
-			end
-		end
+	--CHANGES:Lanrutcon: MoP functions that can't be implemented (e.g. "GetArenaOpponentSpec") commented
+	--elseif event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS" or event == "ARENA_OPPONENT_UPDATE" then
+	--	for i = 1, 5 do
+	--		local specID = GetArenaOpponentSpec(i)
+	--		if specID and specID > 0 then
+	--			-- only add icons if show unused is checked
+	--			if not self.settings.showUnused then return end
+	--			if not self.detected[i] then
+	--				local class = select(7, GetSpecializationInfoByID(specID))
+	--				OmniBar_AddIconsByClass(self, class, i, specID)
+	--				self.detected[i] = class
+	--			end
+	--		end
+	--	end
 
 	elseif event == "PLAYER_TARGET_CHANGED" or event == "PLAYER_FOCUS_CHANGED" or event == "PLAYER_REGEN_DISABLED" then
 		-- update icon borders
@@ -652,7 +681,7 @@ end
 
 function OmniBar_CooldownFinish(self, force)
 	local icon = self:GetParent()
-	if icon.cooldown and icon.cooldown:GetCooldownTimes() > 0 and not force then return end -- not complete
+	if icon.cooldown and GetCooldownTimes(icon.cooldown) and GetCooldownTimes(icon.cooldown) > 0 and not force then return end -- not complete
 	local charges = icon.charges
 	if charges then
 		charges = charges - 1
@@ -670,10 +699,10 @@ function OmniBar_CooldownFinish(self, force)
 	local flash = icon.flashAnim
 	local newItemGlowAnim = icon.newitemglowAnim
 
-	if flash:IsPlaying() or newItemGlowAnim:IsPlaying() then
-		flash:Stop()
-		newItemGlowAnim:Stop()
-	end
+	--if flash:IsPlaying() or newItemGlowAnim:IsPlaying() then
+	--	flash:Stop()
+	--	newItemGlowAnim:Stop()
+	--end
 
 	if not bar.settings.showUnused then
 		icon:Hide()
@@ -719,9 +748,25 @@ end
 
 function OmniBar_StartCooldown(self, icon, start)
 	icon.cooldown:SetCooldown(start, icon.duration)
+	icon.cooldown.startTime = start;
+	icon.cooldown.duration = icon.duration;
 	icon.cooldown.finish = start + icon.duration
-	icon.cooldown:SetSwipeColor(0, 0, 0, self.settings.swipeAlpha or 0.65)
+	--icon.cooldown:SetSwipeColor(0, 0, 0, self.settings.swipeAlpha or 0.65)
 	icon:SetAlpha(1)
+	
+	--CHANGES:Lanrutcon:Setting a timer for each cooldown
+	icon.totalElapsed = 0;
+	icon:SetScript("OnUpdate", function(self, elapsed)
+		self.totalElapsed = self.totalElapsed + elapsed;
+		if(self.totalElapsed > self.cooldown.duration) then
+			self.totalElapsed = 0;
+			self:Hide();
+			self:SetScript("OnUpdate", nil);
+		end
+	end);
+	
+	orderByTimeLeft();
+	OmniBar_Position(self);
 end
 
 
@@ -790,7 +835,7 @@ function OmniBar_AddIcon(self, spellID, sourceGUID, sourceName, init, test, spec
 	icon.added = now
 
 	if icon.charges and cooldowns[originalSpellID].charges and icon:IsVisible() then
-		local start, duration = icon.cooldown:GetCooldownTimes()
+		local start, duration = GetCooldownTimes(icon.cooldown)
 		if icon.cooldown.finish and icon.cooldown.finish - GetTime() > 1 then
 			-- add a charge
 			local charges = icon.charges + 1
@@ -807,7 +852,7 @@ function OmniBar_AddIcon(self, spellID, sourceGUID, sourceName, init, test, spec
 		icon.Count:SetText("1")
 	else
 		icon.charges = nil
-		icon.Count:SetText(nil)
+		--icon.Count:SetText(nil)
 	end
 	
 	if cooldowns[originalSpellID].duration then
@@ -874,11 +919,11 @@ end
 function OmniBar_UpdateIcons(self)
 	for i = 1, self.numIcons do
 		-- Set show text
-		self.icons[i].cooldown:SetHideCountdownNumbers(self.settings.noCooldownCount and true or false)
+		--self.icons[i].cooldown:SetHideCountdownNumbers(self.settings.noCooldownCount and true or false)
 		self.icons[i].cooldown.noCooldownCount = self.settings.noCooldownCount and true
 
 		-- Set swipe alpha
-		self.icons[i].cooldown:SetSwipeColor(0, 0, 0, self.settings.swipeAlpha or 0.65)
+		--self.icons[i].cooldown:SetSwipeColor(0, 0, 0, self.settings.swipeAlpha or 0.65)
 
 		-- Set border
 		if self.settings.border then
@@ -888,7 +933,7 @@ function OmniBar_UpdateIcons(self)
 		end
 
 		-- Set dim
-		self.icons[i]:SetAlpha(self.settings.unusedAlpha and self.icons[i].cooldown:GetCooldownTimes() == 0 and
+		self.icons[i]:SetAlpha(self.settings.unusedAlpha and GetCooldownTimes(self.icons[i].cooldown) == 0 and
 			self.settings.unusedAlpha or 1)
 
 		-- Masque
@@ -932,7 +977,7 @@ function OmniBar_Position(self)
 		end)
 	else
 		-- if we aren't showing unused, just sort by added time
-		table.sort(self.active, function(a, b) return a.added == b.added and a.spellID < b.spellID or a.added < b.added end)
+		--table.sort(self.active, function(a, b) return a.added == b.added and a.spellID < b.spellID or a.added < b.added end)
 	end
 
 	local count, rows = 0, 1

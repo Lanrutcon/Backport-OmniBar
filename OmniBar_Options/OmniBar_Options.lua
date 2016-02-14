@@ -249,6 +249,8 @@ OmniBarOptions.refresh = function()
 	OmniBarOptionsPanelSwipeAlphaSlider:SetValue(OmniBar.settings.swipeAlpha and OmniBar.settings.swipeAlpha*100 or 65)
 end
 
+
+--CHANGES:Lanrutcon:Fixed some issues with checkboxes
 local subIndex = 1
 local function CreateSub(name)
 	local OptionsPanelFrame = CreateFrame("Frame", "OmniBarOptionsPanel"..subIndex)
@@ -267,7 +269,15 @@ local function CreateSub(name)
 					text = string.sub(text, 0, 22) .. "..."
 				end
 				_G["OmniBarOptionsPanel"..subIndex.."Item"..index.."Text"]:SetText(text)
-
+				
+				spell:SetScript("OnShow", function(self)
+					if(OmniBar.settings.cooldowns[spellID] and (OmniBar.settings.cooldowns[spellID].enabled or OmniBar.settings.cooldowns[spellID].enabled == false)) then
+						self:SetChecked(OmniBar.settings.cooldowns[spellID].enabled);
+					else
+						self:SetChecked(true);
+					end
+				end);
+				
 				-- Show the spell tooltip
 				spell.spellID = spellID
 				spell:SetScript("OnEnter", function(self)
@@ -280,16 +290,19 @@ local function CreateSub(name)
 
 				spell.setFunc = function(value)
 					if not OmniBar.settings.cooldowns[spellID] then OmniBar.settings.cooldowns[spellID] = {} end
-					local enabled = value == "1"
+					local enabled = false;
+					if value == "1" then
+						enabled = true;
+					end
 					OmniBar.settings.cooldowns[spellID].enabled = enabled
-					if enabled then OmniBar_CreateIcon(OmniBar) end
+					if enabled then
+						spell:SetChecked(true);
+						OmniBar_CreateIcon(OmniBar)
+					else
+						spell:SetChecked(false)
+					end
 					OmniBar_RefreshIcons(OmniBar)
 					OmniBar_UpdateIcons(OmniBar)
-					local i = 1
-					while _G["OmniBarOptionsPanel"..i] do
-						_G["OmniBarOptionsPanel"..i]:refresh()
-						i = i + 1
-					end
 				end
 
 				if index > 1 then

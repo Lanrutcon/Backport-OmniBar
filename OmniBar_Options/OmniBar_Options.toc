@@ -1,4 +1,4 @@
-## Interface: 60200
+## Interface: 40300
 ## Title: OmniBar Options
 ## Notes: Options Panel for OmniBar (LoadOnDemand)
 ## Version: v5.11

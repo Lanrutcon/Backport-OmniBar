@@ -63,7 +63,7 @@
 				</Anchors>
 				<Scripts>
 					<OnLoad>
-						self:SetObeyStepOnDrag(true)
+						--self:SetObeyStepOnDrag(true)
 						local name = self:GetName()
 						_G[name .. "Low"]:SetText()
 						local high = _G[name .. "High"]
